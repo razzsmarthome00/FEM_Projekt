@@ -25,9 +25,9 @@ rhoNy = 1100;
 cpCu = 386;
 cpNy = 1500;
 
-K = Kfunk(Ex,Ey,ndof,nelm,edof,t,coord,qNewtonCu,ac,th);
-F = Ffunk(qNewtonCu,coord,TInf,ac,ndof,qhCu,h,th);
-C = Cfunk(Ex,Ey,nelm,t,rhoCu,rhoNy,cpCu,cpNy,edof,ndof,th);
+K = K(Ex,Ey,ndof,nelm,edof,t,coord,qNewtonCu,ac,th);
+F = F(qNewtonCu,coord,TInf,ac,ndof,qhCu,h,th);
+C = C(Ex,Ey,nelm,t,rhoCu,rhoNy,cpCu,cpNy,edof,ndof,th);
 
 %% Uppgift a)
 clc
@@ -43,8 +43,8 @@ clc
 close all
 
 t0=0;
-t1 = 100;
-N=5000;   
+t1 = 1000;
+N=50000;   
 dt= (t1-t0)/N;
 tgrid = linspace(t0,t1,dt);
 
@@ -64,20 +64,11 @@ i3 = 0.03*i;
 
 M = 5;
 
-uold = a0;
-aprox = zeros(ndof,N+1);
-
 for i =1:M
-    uold = a0;
-    a1 = plottime(a0,K,F,C,dt,i3,ndof,N,i,M);
-
-    figure(i)
-    ed = extract(edof,a1);
-    patch(Ex',Ey',ed');
-    colorbar;
-    caxis([18, 27]);
+    plottime(a0,K,F,dt,i3)
 end
 
 
 
-
+ed = extract(edof,a1);
+patch(Ex',Ey',ed');

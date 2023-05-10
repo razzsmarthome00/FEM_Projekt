@@ -1,0 +1,12 @@
+function a1 = plottime(a0,K,F,C,dt,i3,ndof,N,i,)
+uold = a0;
+aprox = zeros(ndof,N+1);
+di3=
+for i=1:round(i3)
+    aprox(:,i)=uold;
+    a1 = ((C+dt.*K)\(C*uold+dt.*F)); %Implicit Euler
+    uold = a1;
+end
+
+end
+

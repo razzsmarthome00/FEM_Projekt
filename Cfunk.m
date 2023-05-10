@@ -1,4 +1,4 @@
-function C = C(Ex,Ey,nelm,t,rhoCu,rhoNy,cpCu,cpNy,edof,ndof,th)
+function C = Cfunk(Ex,Ey,nelm,t,rhoCu,rhoNy,cpCu,cpNy,edof,ndof,th)
 xCu =rhoCu*cpCu*th;
 xNy = rhoNy*cpNy*th;
 

@@ -1,4 +1,4 @@
-function K = K(Ex,Ey,ndof,nelm,edof,t,coord,qNewtonCu,ac,th)
+function K = Kfunk(Ex,Ey,ndof,nelm,edof,t,coord,qNewtonCu,ac,th)
 
 kCu = 385;
 kNyl= 0.26;

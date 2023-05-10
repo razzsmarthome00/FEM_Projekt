@@ -1,4 +1,4 @@
-function F = F(qNewtonCu,coord,TInf,ac,ndof,qhCu,h,th)
+function F = Ffunk(qNewtonCu,coord,TInf,ac,ndof,qhCu,h,th)
 F = zeros(ndof,1);
 
 %Convection Boundary 
