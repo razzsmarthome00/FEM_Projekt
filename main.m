@@ -53,25 +53,28 @@ aprox = zeros(ndof,N+1);
 uold = a0;
 i = 1;
 a1 =zeros(ndof);
-while max_stat*0.9 > max(a1)
+while max_stat*0.9 >= max(a1)
     aprox(:,i)=uold;
     a1 = ((C+dt.*K)\(C*uold+dt.*F)); %Implicit Euler
     uold = a1;
-    i = i +1;
+    i = i + 1;
 end
 time = i*dt;
 i3 = 0.03*i;
 
+ed = extract(edof,a1);
+patch(Ex',Ey',ed');
+    
 M = 5;
 
 uold = a0;
 aprox = zeros(ndof,N+1);
 
-for i =1:M
+for k =1:M
     uold = a0;
-    a1 = plottime(a0,K,F,C,dt,i3,ndof,N,i,M);
+    a1 = plottime(a0,K,F,C,dt,i3,ndof,N,k,M);
 
-    figure(i)
+    figure(k)
     ed = extract(edof,a1);
     patch(Ex',Ey',ed');
     colorbar;

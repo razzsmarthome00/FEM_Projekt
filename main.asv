@@ -25,9 +25,9 @@ rhoNy = 1100;
 cpCu = 386;
 cpNy = 1500;
 
-K = K(Ex,Ey,ndof,nelm,edof,t,coord,qNewtonCu,ac,th);
-F = F(qNewtonCu,coord,TInf,ac,ndof,qhCu,h,th);
-C = C(Ex,Ey,nelm,t,rhoCu,rhoNy,cpCu,cpNy,edof,ndof,th);
+K = Kfunk(Ex,Ey,ndof,nelm,edof,t,coord,qNewtonCu,ac,th);
+F = Ffunk(qNewtonCu,coord,TInf,ac,ndof,qhCu,h,th);
+C = Cfunk(Ex,Ey,nelm,t,rhoCu,rhoNy,cpCu,cpNy,edof,ndof,th);
 
 %% Uppgift a)
 clc
@@ -43,8 +43,8 @@ clc
 close all
 
 t0=0;
-t1 = 1000;
-N=50000;   
+t1 = 100;
+N=5000;   
 dt= (t1-t0)/N;
 tgrid = linspace(t0,t1,dt);
 
@@ -53,22 +53,34 @@ aprox = zeros(ndof,N+1);
 uold = a0;
 i = 1;
 a1 =zeros(ndof);
-while max_stat*0.9 > max(a1)
+while max_stat*0.9 >= max(a1)
     aprox(:,i)=uold;
     a1 = ((C+dt.*K)\(C*uold+dt.*F)); %Implicit Euler
     uold = a1;
-    i = i +1;
+    i = i + 1;
 end
 time = i*dt;
 i3 = 0.03*i;
 
+ed = extract(edof,a1);
+patch(Ex',Ey',ed');
+    
 M = 5;
 
-for i =1:M
-    plottime(a0,K,F,dt,i3)
+uold = a0;
+aprox = zeros(ndof,N+1);
+
+for k =1:M
+    uold = a0;
+    a1 = plottime(a0,K,F,C,dt,i3,ndof,N,k,M);
+
+    figure(k)
+    ed = extract(edof,a1);
+    patch(Ex',Ey',ed');
+    colorbar;
+    caxis([18, 27]);
 end
 
 
 
-ed = extract(edof,a1);
-patch(Ex',Ey',ed');
+
