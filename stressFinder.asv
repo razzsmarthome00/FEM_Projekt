@@ -1,0 +1,17 @@
+function stress = stressFinder(Ex,Ey,Ep,Cny,Ccu,nyEdof,t,ndof,nelm,a)
+
+
+
+stress = zeros(2*ndof);
+for el=1:nelm
+    if t(4,el)==2
+        stresse = plants(Ex(el,:),Ey(el,:),Ep,Cny);
+    else
+        stresse = plants(Ex(el,:),Ey(el,:),Ep,Ccu);
+    end
+    
+    indx = nyEdof(el,2:end);
+    stress(indx) = stress(indx)+stresse;
+end
+end
+

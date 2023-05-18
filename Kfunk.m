@@ -1,11 +1,4 @@
-function K = Kfunk(Ex,Ey,ndof,nelm,edof,t,coord,qNewtonCu,ac,th)
-
-kCu = 385;
-kNyl= 0.26;
-
-
-DCu=[kCu,0;0,kCu];
-DNyl = [kNyl,0;0,kNyl];
+function K = Kfunk(Ex,Ey,ndof,nelm,edof,t,coord,qNewtonCu,ac,th,DCu,DNyl)
 K = zeros(ndof);
 
 for el=1:nelm
