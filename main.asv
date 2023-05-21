@@ -42,7 +42,7 @@ close all
 a= solveq(K,F);
 max_stat= max(a);
 ed = extract(edof,a);
-print1(Ex,Ey,ed)
+print(Ex,Ey,ed)
 
 %% Uppgift b)
 clc
@@ -50,7 +50,7 @@ close all
 
 t0=0;
 t1 = 100;
-N=200;   
+N=5000;   
 dt= (t1-t0)/N;
 tgrid = linspace(t0,t1,dt);
 
@@ -67,7 +67,7 @@ time = i*dt;
 i3 = 0.03*i;
 
 ed = extract(edof,a1);
-print1(Ex,Ey,ed)
+print(Ex,Ey,ed)
     
 M = 5;
 
@@ -80,7 +80,7 @@ for k =1:M
 
     figure(k)
     ed = extract(edof,a1);
-    print1(Ex,Ey,ed)
+    print(Ex,Ey,ed)
     caxis([18, 27]);
 end
 
@@ -111,7 +111,7 @@ alphaCu=17.6*10^(-6);
 alphaNy = 80*10^(-6);
 
 Ep= [2 th];
-Km = sparse(Kmatrix(Ex,Ey,Ep,Dny,Dcu,newedof,t,ndof,nelm));
+Kmatrix = Kmatrix(Ex,Ey,Ep,Dny,Dcu,newedof,t,ndof,nelm);
 Hmatrix = Hfunk(Ex,Ey,Ep,Dny,Dcu,newedof,t,ndof,nelm,alphaCu,alphaNy,deltaT);
 
 [~,bc1_index] = bound([17 16 15],e);
@@ -131,7 +131,7 @@ for i=1:length(bc3_index)
     bc(i+length(bc1_index)*2+length(bc2_index),1)=2*bc3_index(i);
 end
 
-af = solveq(Km,Hmatrix,bc);
+af = solveq(Kmatrix,Hmatrix,bc);
 ed = extract(newedof,af);
 
 %Finds the stress in one ELEMENT!
@@ -139,13 +139,10 @@ stress = stressFinder(Ex,Ey,Dny,Dcu,newedof,t,nelm,af,th);
 
 %Von Mises ELEMENTVIS!
 effectiveStress = vonMises(stress);
-nStress=nodeStress(effectiveStress,edof,ndof);
+
+
 
 mag = 1; % Magnification (due to small deformations)
 exd = Ex + mag*ed(:,1:2:end);
 eyd = Ey + mag*ed(:,2:2:end);
 print2(Ex,Ey,exd,eyd,mag);
-
-figure(6)
-ed = extract(edof,nStress);
-print1(Ex,Ey,ed);
