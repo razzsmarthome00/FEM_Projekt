@@ -1,64 +1,96 @@
+%% FEM project: MAIN
+%% Parameters
 close all
-clear
+clear all
 clc
 
-addpath("D:\Program\MATLAB\toolbox\fem");
-addpath("D:\Program\MATLAB\toolbox\geom");
+addpath("C:\Users\Elias Pernefors\Dropbox\Min PC (DESKTOP-CR4CVMR)\Desktop\calfem\fem");
+addpath("C:\Users\Elias Pernefors\Dropbox\Min PC (DESKTOP-CR4CVMR)\Desktop\calfem\geom");
 
-load('pet.mat', 'p')
-load('pet.mat', 'e')
-load('pet.mat', 't')
+%p,e and t are loaded in from the pet.mat file
+load('pet.mat','p');
+load('pet.mat','e');
+load('pet.mat','t');
 
-[nelm,edof,coord,ndof,Ex,Ey] = trans2calfem(p,t);
+% Material constants and parameters are all implemented here to be used in
+% the code more freely
+E_cu = 128.*10^9;
+E_nyl = 3.*10^9;
+nu_cu = 0.36;
+nu_nyl = 0.39;
+alpha_cu = 17.6.*10.^(-6);
+alpha_nyl = 80.*10.^(-6);
+rho_cu = 8930;
+rho_nyl = 1100;
+cp_cu = 386;
+cp_nyl = 1500;
+k_cu = 385;
+k_nyl = 0.26;
+th = 5.*10.^(-3);
+T_inf = 18;
+ac = 40;
+h = -10.^(5);
+x_cu = rho_cu*cp_cu*th;
+x_nyl = rho_nyl*cp_nyl*th;
+G_cu = E_cu/(2*(1+nu_cu));
+G_nyl = E_nyl/(2*(1+nu_nyl));
 
-[qNewtonCu,~] = bound([1 2 3 5 6 14 18 20],e);
-[qhCu, ~] = bound([17],e);
-[q0Cu, ~] = bound([16 8],e);
-[q0Ny,~] = bound([15 7],e);
+% This function gives the discretization of the geometry
+[nelm, edof, coord, ndof, Ex, Ey] = trans2calFEM(p,e,t);
 
-TInf = 18;
-ac=40;
-th = 0.005;
-h= -10^5;   
-rhoCu = 8930;
-rhoNy = 1100;
-cpCu = 386;
-cpNy = 1500;
-kCu = 385;
-kNyl= 0.26;
+% The function 'boundaries' calculates which elements are located on the
+% given boundary segments for the 
+[q0Cu, index_q0Cu] = boundaries([14 17] ,e);
+[qhCu, index_qhCu] = boundaries(18 ,e);
+[q0Nyl, index_q0nyl] = boundaries([13 16] ,e);
+[qNewtonCu, index_qNewtonCu] = boundaries([1 2 3 5 6 11 21 15] ,e);
 
+%These are the specific segments which cannot move in part c) where they
+%are required for bc
+[~, index_qStationary] = boundaries([16 17 18], e);
+[~, index_qStatX] = boundaries(4,e);
+[~,index_top] = boundaries(19,e);
 
-DCu=[kCu,0;0,kCu];
-DNyl = [kNyl,0;0,kNyl];
+% We now define K, F and C using the respective functions.
+K = Kfunk(Ex,Ey,ndof,nelm,edof,t,coord,qNewtonCu,ac,k_cu,k_nyl);
+F = Ffunk(ndof,coord,qNewtonCu,T_inf,ac,qhCu,th,h);
+C = Cfunk(Ex,Ey,t,nelm,ndof,edof,x_cu,x_nyl);
 
-K = sparse(Kfunk(Ex,Ey,ndof,nelm,edof,t,coord,qNewtonCu,ac,th,kCu,kNyl));
-F = Ffunk(qNewtonCu,coord,TInf,ac,ndof,qhCu,h,th);
-C = sparse(Cfunk(Ex,Ey,nelm,t,rhoCu,rhoNy,cpCu,cpNy,edof,ndof,th));
-
-%% Uppgift a)
+%% uppgift a) Non transient Solver
 clc
 close all
+% This code segments solves the stationary heat flow problem using solveq
+% and then it is plotted using the print1 function after extracting ed 
 
-a= solveq(K,F);
-max_stat= max(a);
+a = solveq(K,F);
+
 ed = extract(edof,a);
+
+figure(1)
 print1(Ex,Ey,ed)
 
-%% Uppgift b)
+% The maximal stationary temperature
+max_temp = max(a);
+
+%% uppgift b: Transient Solver 
 clc
 close all
 
-t0=0;
+% Time step related parameters
+t0 = 0;
 t1 = 100;
-N=200;   
-dt= (t1-t0)/N;
+N = 200;   
+dt = (t1-t0)/N;
 tgrid = linspace(t0,t1,dt);
 
 a0 = 18*ones(ndof,1);
 uold = a0;
 i = 1;
-a1 =zeros(ndof);
-while max_stat*0.9 >= max(a1)
+a1 = zeros(ndof);
+
+% This loop finds how many time steps dt it takes to reach 90% of the maximal
+% staionary temperature
+while max_temp*0.9 > max(a1)
     a1 = ((C+dt.*K)\(C*uold+dt.*F)); %Implicit Euler
     uold = a1;
     i = i + 1;
@@ -66,86 +98,105 @@ end
 time = i*dt;
 i3 = 0.03*i;
 
-ed = extract(edof,a1);
-print1(Ex,Ey,ed)
-    
+% The code below plots M snap shots as the temperature goes from 0% ->
+% 3% of the time it takes to reach 90% of the maximal temperatuer
 M = 5;
-
 uold = a0;
-aprox = zeros(ndof,N+1);
-
-for k =1:M
+for i =1:M
     uold = a0;
-    a1 = plottime(a0,K,F,C,dt,i3,ndof,N,k,M);
-
-    figure(k)
+    a1 = plottime(a0,K,F,C,dt,i3,ndof,N,i,M);
+    figure(i)
     ed = extract(edof,a1);
-    print1(Ex,Ey,ed)
-    caxis([18, 27]);
+    print1(Ex,Ey,ed);
+    caxis([18, 28]);
 end
 
-
-%% Uppgift c
+%% Uppgift c: Thermal expansion and stress
 clc
 close all
-newedof=nyEdof(edof,nelm);
-a0 = 18*ones(ndof,1);
 
-Enyl = 3*10^9;
-vnyl=0.39;
-Gnyl=Enyl/(2*(1+vnyl));
+% We calculate the new Edof-matrix with the function newdof. nndof is the
+% new ndof which is twice as large since all old degrees of freedom have
+% made two new degrees of freedom
 
+nedof = newdof(edof,nelm);
+nndof = 2*ndof;
 
-Ecu=128*10^9;
-vcu=0.36;
-Gcu=Ecu/(2*(1+vcu));
+% The new c-matrix for cupper and nylon. It is 6x6 here.
+C_cu = c_matrix(E_cu, nu_cu, G_cu);
+C_nyl = c_matrix(E_nyl, nu_nyl, G_nyl);
 
-Cny=Cmatrix(Enyl,vnyl,Gnyl);
-Ccu=Cmatrix(Ecu,vcu,Gcu);
+% The D-matrix is the inverse of the C-matrix. It could also be found using
+% the 'hooke' function which we found out after we had already implemented
+% our own code. 'hooke' gave the same result which means that we will not
+% change our already functioning function.
+D_cu = inv(C_cu);
+D_nyl = inv(C_nyl);
 
-Dny=inv(Cny);
-Dcu=inv(Ccu);
+% The function k_matrix calculates the K-matrix for our new degrees of
+% freedom.
+K_new = k_matrix(Ex,Ey,nndof,nelm,nedof,t,D_cu,D_nyl,th);
 
-deltaT=a-a0;
-alphaCu=17.6*10^(-6);
-alphaNy = 80*10^(-6);
+% deltaT is the temperature difference between a0 and the stationary
+% solution
+deltaT = a-a0;
 
-Ep= [2 th];
-Km = sparse(Kmatrix(Ex,Ey,Ep,Dny,Dcu,newedof,t,ndof,nelm));
-Hmatrix = Hfunk(Ex,Ey,Ep,Dny,Dcu,newedof,t,ndof,nelm,alphaCu,alphaNy,deltaT);
+% The H-matrix as we have chosen to call it calculates the intergral int(B*t*D*epsilon^(theta))dA
+H = Hfunk(Ex,Ey,nndof,nelm,nedof,t,D_cu,D_nyl,th,deltaT,alpha_cu,alpha_nyl);
 
-[~,bc1_index] = bound([17 16 15],e);
-[~,bc2_index] = bound(4,e);
-[~,bc3_index] = bound(21,e);
-bc=zeros(length(bc1_index)*2+length(bc2_index)+length(bc3_index),2);
-for i=1:length(bc1_index)
-    bc(i,1)=2*bc1_index(i);
-    bc(i+length(bc1_index),1)=2*bc1_index(i)-1;
+% BC is used here to implement the boundary conditions. The main ones are
+% that dx and dy are 0 on x = 0 since the figure is fixed here. Since we
+% have symmetry the figure should also not 'phase into itself' which is why
+% we have implemented that dx = 0 on x = 5 mm and dy = 0 on y =
+% 2.5 mm
+bc = zeros(length(index_qStationary)*2+length(index_qStatX)+length(index_top),2);
+
+% This loop fixes the boundary at x = 0
+for i = 1:length(index_qStationary)
+    bc(i,1) = 2*index_qStationary(i);
+    bc(i+length(index_qStationary),1) = 2*index_qStationary(i)-1;
 end
 
-for i=1:length(bc2_index)
-    bc(i+length(bc1_index)*2,1)=2*bc2_index(i)-1;
+% This loop fixes the boundary at x = 5mm
+for j = 1:length(index_qStatX)
+   bc(length(index_qStationary)*2+j,1) = 2*index_qStatX(j)-1; 
 end
 
-for i=1:length(bc3_index)
-    bc(i+length(bc1_index)*2+length(bc2_index),1)=2*bc3_index(i);
+% This loop fixes the boundary at y = 2.5mm
+for j = 1:length(index_top)
+   bc(length(index_qStationary)*2+length(index_qStatX)+j,1) = 2*index_top(j); 
 end
 
-af = solveq(Km,Hmatrix,bc);
-ed = extract(newedof,af);
+% We solve the displacement and extract ed
+u = solveq(K_new,H,bc);
 
-%Finds the stress in one ELEMENT!
-stress = stressFinder(Ex,Ey,Dny,Dcu,newedof,t,nelm,af,th);
+ed = extract(nedof,u);
 
-%Von Mises ELEMENTVIS!
-effectiveStress = vonMises(stress);
-nStress=nodeStress(effectiveStress,edof,ndof);
-
+% Calculate displaced coordinates
 mag = 1; % Magnification (due to small deformations)
 exd = Ex + mag*ed(:,1:2:end);
 eyd = Ey + mag*ed(:,2:2:end);
-print2(Ex,Ey,exd,eyd,mag);
 
-figure(6)
-ed = extract(edof,nStress);
-print1(Ex,Ey,ed);
+ex_strain = Ex + ed(:,1:2:end);
+ey_strain = Ey + ed(:,2:2:end);
+
+print2(Ex,Ey,exd,eyd,mag)
+
+% The stress is calculated in all ELEMENTS (!!)
+stress = stressFinder(ex_strain,ey_strain,nelm,nedof,t,D_cu,D_nyl,th,u,deltaT,alpha_cu,alpha_nyl);
+
+% The von Mises stresses in every element
+vm_stress = von_mises(stress);
+
+% This function takes the stress in every adjacent element and avereges it
+% out to give the stress in each node. This is the 'solution' to our
+% problem which we have previously solved using solveq since it gives a
+% value in every node.
+effective_stress = node_stress(vm_stress,edof,coord);
+   
+ed_stress=extract(edof,effective_stress);
+
+figure()
+print3(exd,eyd,ed_stress);
+max_stress = max(max(ed_stress));
+

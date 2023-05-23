@@ -1,4 +1,7 @@
 function print2(Ex,Ey,exd,eyd,mag)
+% This function patches 4 times for the displacement-problem and in the
+% same plot it patches the original geometry 4 times as to make comparisons
+% easier.
 
 patch(Ex',Ey',[0 0 0],'EdgeColor','none','FaceAlpha',0.3)
 hold on
