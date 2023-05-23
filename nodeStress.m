@@ -1,13 +1,9 @@
-function nStress = nodeStress(effectiveStress,edof,ndof)
+function effectiveStress_nod = nodeStress(effectiveStress_el,edof,coord)
 
-nStress = zeros(ndof,1);
-counter = zeros(ndof,1);
-
-for el=1:length(edof(:,1))
-    index = edof(el,2:end);
-    nStress(index)=effectiveStress(el)*[1,1,1];
-    counter(index)=counter(index)+1;
+effectiveStress_nod = zeros(size(coord,1),1);
+for i=1:size(coord,1)
+[c0,~]=find(edof(:,2:4)==i);
+effectiveStress_nod(i,1)=sum(effectiveStress_el(c0))/size(c0,1);
 end
-nStress=nStress./counter;
 end
 

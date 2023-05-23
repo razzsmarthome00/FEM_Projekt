@@ -19,7 +19,7 @@ load('pet.mat', 't')
 TInf = 18;
 ac=40;
 th = 0.005;
-h= -10^5;   
+h= -10^5;
 rhoCu = 8930;
 rhoNy = 1100;
 cpCu = 386;
@@ -72,12 +72,10 @@ print1(Ex,Ey,ed)
 M = 5;
 
 uold = a0;
-aprox = zeros(ndof,N+1);
 
 for k =1:M
     uold = a0;
     a1 = plottime(a0,K,F,C,dt,i3,ndof,N,k,M);
-
     figure(k)
     ed = extract(edof,a1);
     print1(Ex,Ey,ed)
@@ -134,18 +132,21 @@ end
 af = solveq(Km,Hmatrix,bc);
 ed = extract(newedof,af);
 
-%Finds the stress in one ELEMENT!
-stress = stressFinder(Ex,Ey,Dny,Dcu,newedof,t,nelm,af,th);
-
-%Von Mises ELEMENTVIS!
-effectiveStress = vonMises(stress);
-nStress=nodeStress(effectiveStress,edof,ndof);
-
 mag = 1; % Magnification (due to small deformations)
 exd = Ex + mag*ed(:,1:2:end);
 eyd = Ey + mag*ed(:,2:2:end);
 print2(Ex,Ey,exd,eyd,mag);
 
-figure(6)
-ed = extract(edof,nStress);
-print1(Ex,Ey,ed);
+%Finds the stress in one ELEMENT!
+stress= stressFinder(exd,eyd,Dny,Dcu,newedof,t,nelm,af,th,alphaCu,alphaNy,deltaT);
+
+%Von Mises ELEMENTVIS!
+effectiveStress_el = vonMises(stress);
+effectiveStress_nod=nodeStress(effectiveStress_el,edof,coord);
+figure()
+ed = extract(edof,effectiveStress_nod);
+print3(exd,eyd,ed);
+
+figure()
+ed = extract(edof,a);
+print1(exd,eyd,ed)
